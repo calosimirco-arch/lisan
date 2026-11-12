@@ -194,7 +194,29 @@ class MainActivity:ComponentActivity(){
         }
     }
 }
+private val endlessTopics = listOf(
+    "Costruisci una conversazione", "Domande e risposte", "Al mercato", "In viaggio",
+    "Al bar", "Conosci nuove persone", "Orientarsi in città", "Racconta la tua giornata",
+    "Ascolto e ripetizione", "Frasi in contesto", "Ripasso intelligente", "Dialogo completo"
+)
+
+private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
+    if(base.isEmpty()) return emptyList()
+    return (0 until count).map { index ->
+        val source = base[index % base.size]
+        val cycle = index / base.size + 1
+        val topic = endlessTopics[index % endlessTopics.size]
+        val ordered = source.phrases
+        val offset = if(ordered.isEmpty()) 0 else index % ordered.size
+        val rotated = ordered.drop(offset) + ordered.take(offset)
+        val selected = rotated.take(minOf(rotated.size, (2 + cycle).coerceAtMost(5)))
+        Lesson("practice_${source.key}_${index}", "$topic · livello $cycle", source.dialect, source.key, selected)
+    }
+}
+
 @Composable private fun LearnScreen(items:List<Lesson>,mix:Mix,onSelect:(String)->Unit){
+    var extraCount by rememberSaveable { mutableIntStateOf(12) }
+    val endless = remember(items, extraCount) { createEndlessLessons(items, extraCount) }
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
         item { Header("Percorso di studio","Impara, a modo tuo.","Le lezioni seguono il mix di dialetti che hai scelto.") }
         item {
@@ -203,14 +225,24 @@ class MainActivity:ComponentActivity(){
             }
         }
         if(items.isEmpty()) item { Text("Imposta le percentuali dei dialetti nel Profilo per iniziare.",color=Muted) }
-        items(items){ l ->
-            Card(modifier=Modifier.fillMaxWidth().clickable{onSelect(l.id)},colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){
-                Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
-                    Box(Modifier.size(44.dp).background(Mint,CircleShape),contentAlignment=Alignment.Center){Text("ع",color=Forest,fontSize=24.sp,fontWeight=FontWeight.Bold)}
-                    Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(l.dialect,color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp);Text(l.title,color=Forest,fontSize=17.sp,fontWeight=FontWeight.Bold)}
-                    Icon(Icons.Default.PlayCircle,null,tint=Teal,modifier=Modifier.size(28.dp))
-                }
+        item { Text("PERCORSO CONTINUO",color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.3.sp) }
+        items(items){ l -> LessonRow(l,onSelect) }
+        items(endless){ l -> LessonRow(l,onSelect) }
+        item {
+            OutlinedButton(onClick={extraCount += 12},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)) {
+                Icon(Icons.Default.Add,null); Spacer(Modifier.width(8.dp)); Text("Genera altre 12 lezioni")
             }
+            Text("Le unità combinano progressivamente le frasi dei dialetti selezionati, alternando dialoghi, ascolto e ripasso. Il percorso continua senza un ultimo livello.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
+        }
+    }
+}
+
+@Composable private fun LessonRow(l:Lesson,onSelect:(String)->Unit) {
+    Card(modifier=Modifier.fillMaxWidth().clickable{onSelect(l.id)},colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){
+        Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
+            Box(Modifier.size(44.dp).background(Mint,CircleShape),contentAlignment=Alignment.Center){Text("ع",color=Forest,fontSize=24.sp,fontWeight=FontWeight.Bold)}
+            Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(l.dialect,color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp);Text(l.title,color=Forest,fontSize=17.sp,fontWeight=FontWeight.Bold)}
+            Icon(Icons.Default.PlayCircle,null,tint=Teal,modifier=Modifier.size(28.dp))
         }
     }
 }
@@ -299,8 +331,16 @@ private fun toggleDialect(mix:Mix,key:String,enabled:Boolean):Mix {
         parts.filter{it.first>0}.forEach{(v,c)->Box(Modifier.weight(v.toFloat()).fillMaxHeight().background(c))}
     }
 }
+private fun localeForDialect(key:String):Locale = when(key) {
+    "egy" -> Locale.forLanguageTag("ar-EG")
+    "mor" -> Locale.forLanguageTag("ar-MA")
+    "alg" -> Locale.forLanguageTag("ar-DZ")
+    "tun" -> Locale.forLanguageTag("ar-TN")
+    else -> Locale.forLanguageTag("ar")
+}
+
 @Composable private fun LessonScreen(lesson:Lesson,onBack:()->Unit,onComplete:()->Unit){
-    val tts=rememberTts()
+    val tts=rememberTts(lesson.key)
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
         item { Text("‹  INDIETRO",color=Teal,fontWeight=FontWeight.Bold,modifier=Modifier.clickable(onClick=onBack));Spacer(Modifier.height(8.dp));Text(lesson.dialect,color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.4.sp);Text(lesson.title,color=Forest,fontSize=29.sp,fontWeight=FontWeight.ExtraBold) }
         items(lesson.phrases){ phrase ->
@@ -324,13 +364,29 @@ private fun toggleDialect(mix:Mix,key:String,enabled:Boolean):Mix {
         if(completed.isEmpty()) item { Text("Completa la tua prima lezione: la ritroverai qui.",color=Muted) }
     }
 }
-@Composable private fun rememberTts():TextToSpeech?{
+@Composable private fun rememberTts(dialectKey:String):TextToSpeech?{
     val c=LocalContext.current
-    var engine by remember{mutableStateOf<TextToSpeech?>(null)}
-    DisposableEffect(c){
+    var engine by remember(dialectKey){mutableStateOf<TextToSpeech?>(null)}
+    DisposableEffect(c,dialectKey){
+        val locale=localeForDialect(dialectKey)
         val holder=arrayOfNulls<TextToSpeech>(1)
-        val t=TextToSpeech(c){s->if(s==TextToSpeech.SUCCESS){try{holder[0]?.language=Locale("ar")}catch(_:Exception){}}}
-        holder[0]=t;engine=t
+        val t=TextToSpeech(c){status->
+            if(status==TextToSpeech.SUCCESS){
+                try {
+                    val instance=holder[0] ?: return@TextToSpeech
+                    val availability=instance.isLanguageAvailable(locale)
+                    val chosen=if(availability>=TextToSpeech.LANG_AVAILABLE) locale else Locale.forLanguageTag("ar")
+                    instance.language=chosen
+                    instance.setSpeechRate(0.82f)
+                    instance.setPitch(1.0f)
+                    val matchingVoice=instance.voices?.filter { it.locale.language=="ar" &&
+                        it.locale.country.equals(locale.country,true) }?.maxByOrNull { it.quality }
+                    if(matchingVoice!=null) instance.voice=matchingVoice
+                } catch(_:Exception) { }
+            }
+        }
+        holder[0]=t
+        engine=t
         onDispose{t.stop();t.shutdown();engine=null}
     }
     return engine
@@ -340,6 +396,7 @@ private fun toggleDialect(mix:Mix,key:String,enabled:Boolean):Mix {
     var result by rememberSaveable{mutableStateOf("La frase riconosciuta apparirà qui.")}
     var status by rememberSaveable{mutableStateOf("Premi il microfono e pronuncia una frase.")}
     var dialect by rememberSaveable{mutableStateOf("egy")}
+    val voice=rememberTts(dialect)
     val options=listOf("egy" to "Egiziano","mor" to "Marocchino","alg" to "Algerino","tun" to "Tunisino","msa" to "Standard").filter{(key,_)->when(key){"egy"->mix.egy>0;"mor"->mix.mor>0;"alg"->mix.alg>0;"tun"->mix.tun>0;else->mix.msa>0}}
     LaunchedEffect(options){if(options.none{it.first==dialect})dialect=options.firstOrNull()?.first?:"msa"}
     val start={
@@ -382,7 +439,7 @@ private fun toggleDialect(mix:Mix,key:String,enabled:Boolean):Mix {
                 }
             }
         }
-        item { Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(16.dp)){Text("TRASCRIZIONE",color=Teal,fontWeight=FontWeight.Bold,fontSize=11.sp);Text(result,color=Forest,fontSize=19.sp)}} }
+        item { Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(16.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text("TRASCRIZIONE",color=Teal,fontWeight=FontWeight.Bold,fontSize=11.sp);Spacer(Modifier.weight(1f));IconButton(onClick={voice?.speak(result,TextToSpeech.QUEUE_FLUSH,null,"recognized")}){Icon(Icons.Default.VolumeUp,"Riascolta",tint=Teal)}};Text(result,color=Forest,fontSize=19.sp)}} }
         item { Text("Nota: la disponibilità del riconoscimento per i dialetti dipende dai servizi vocali installati sul telefono.",color=Muted,fontSize=12.sp,lineHeight=18.sp) }
     }
 }
