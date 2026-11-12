@@ -93,7 +93,6 @@ class MainActivity:ComponentActivity(){
     val mix by ctx.store.data.map { Mix(it[EGY]?:75,it[MOR]?:0,it[ALG]?:0,it[TUN]?:0) }.collectAsState(initial=Mix())
     val xp=progress.first
     val done=progress.second
-    val lesson=lessons.firstOrNull{it.id==selected}
     val activeLessons=lessons.filter { l -> when(l.key) {
         "egy" -> mix.egy>0
         "mor" -> mix.mor>0
@@ -101,6 +100,8 @@ class MainActivity:ComponentActivity(){
         "tun" -> mix.tun>0
         else -> mix.msa>0
     } }
+    val lesson=lessons.firstOrNull{it.id==selected}
+        ?: createEndlessLessons(activeLessons, 1000).firstOrNull { it.id==selected }
     MaterialTheme(colorScheme=lightColorScheme(primary=Forest,onPrimary=Color.White,secondary=Teal,background=Ivory,surface=Paper,onSurface=Forest)){
         Scaffold(
             containerColor=Ivory,
