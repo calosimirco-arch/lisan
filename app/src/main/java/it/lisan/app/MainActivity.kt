@@ -214,6 +214,29 @@ class MainActivity:ComponentActivity(){
         }
     }
 }
+
+private fun toggleDialect(mix:Mix,key:String,enabled:Boolean):Mix {
+    val current=when(key){"egy"->mix.egy;"mor"->mix.mor;"alg"->mix.alg;else->mix.tun}
+    if(!enabled) return when(key){"egy"->mix.copy(egy=0);"mor"->mix.copy(mor=0);"alg"->mix.copy(alg=0);else->mix.copy(tun=0)}
+    if(current>0) return mix
+    var remaining=15
+    var updated=mix
+    val fromStandard=minOf(remaining,mix.msa)
+    remaining-=fromStandard
+    // If the standard-Arabic share is too small, take the difference from the largest active regional dialect.
+    val donorKeys=listOf("egy","mor","alg","tun").filter{it!=key}.sortedByDescending {
+        when(it){"egy"->updated.egy;"mor"->updated.mor;"alg"->updated.alg;else->updated.tun}
+    }
+    for(donor in donorKeys){
+        if(remaining<=0) break
+        val amount=minOf(remaining,when(donor){"egy"->updated.egy;"mor"->updated.mor;"alg"->updated.alg;else->updated.tun})
+        updated=when(donor){"egy"->updated.copy(egy=updated.egy-amount);"mor"->updated.copy(mor=updated.mor-amount);"alg"->updated.copy(alg=updated.alg-amount);else->updated.copy(tun=updated.tun-amount)}
+        remaining-=amount
+    }
+    val allocation=15-remaining
+    return when(key){"egy"->updated.copy(egy=updated.egy+allocation);"mor"->updated.copy(mor=updated.mor+allocation);"alg"->updated.copy(alg=updated.alg+allocation);else->updated.copy(tun=updated.tun+allocation)}
+}
+
 @Composable private fun ProfileScreen(mix:Mix,onMixChange:(Mix)->Unit){
     val entries=listOf(
         Triple("egy","Arabo egiziano","La parlata del Cairo e dintorni"),
@@ -247,8 +270,7 @@ class MainActivity:ComponentActivity(){
                     Row(verticalAlignment=Alignment.CenterVertically){
                         Column(Modifier.weight(1f)){Text(entry.second,color=Forest,fontWeight=FontWeight.Bold,fontSize=16.sp);Text(entry.third,color=Muted,fontSize=12.sp)}
                         Switch(checked=enabled,onCheckedChange={checked->
-                            if(checked){val add=15.coerceAtMost(mix.msa);val base=if(add==0) 15 else add;val updated=when(key){"egy"->mix.copy(egy=mix.egy+base); "mor"->mix.copy(mor=mix.mor+base); "alg"->mix.copy(alg=mix.alg+base);else->mix.copy(tun=mix.tun+base)};onMixChange(updated)}
-                            else {val updated=when(key){"egy"->mix.copy(egy=0); "mor"->mix.copy(mor=0); "alg"->mix.copy(alg=0);else->mix.copy(tun=0)};onMixChange(updated)}
+                            onMixChange(toggleDialect(mix,key,checked))
                         })
                     }
                     if(enabled){
