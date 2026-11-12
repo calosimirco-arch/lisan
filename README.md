@@ -10,3 +10,6 @@ Questa è una prima versione da verificare con la pipeline CI. Il corso di 90 gi
 
 ## Requisiti
 JDK 17, Android SDK 36, Android Gradle Plugin 8.13.2 e Gradle 8.13. Package: `it.lisan.app`.
+
+
+Build pipeline: SDK Android gestito direttamente dal runner GitHub Actions; output APK debug in `LISAN-debug-apk`.
