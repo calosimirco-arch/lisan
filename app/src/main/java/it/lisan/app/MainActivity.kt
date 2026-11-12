@@ -71,7 +71,7 @@ class MainActivity:ComponentActivity(){
      Text(lesson.dialect,color=Green,fontWeight=FontWeight.Bold)
      val tts=rememberTts()
      lesson.phrases.forEachIndexed{i,p->Card(colors=CardDefaults.cardColors(containerColor=Paper)){Column(Modifier.padding(15.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text("0"+(i+1),color=Green);Spacer(Modifier.weight(1f));IconButton(onClick={tts?.speak(p.ar,TextToSpeech.QUEUE_FLUSH,null,"phrase"+i)}){Icon(Icons.Default.VolumeUp,"Ascolta")}};Text(p.ar,color=Forest,fontSize=30.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth());Text(p.latin,color=Green,fontWeight=FontWeight.SemiBold);Text(p.it,color=Forest,fontSize=17.sp)}}}
-     Button(onClick={scope.launch{ctx.store.edit{v->val d=(v[DONE]?: emptySet()).toMutableSet();if(d.add(lesson.id))v[XP]=(v[XP]?:0)+20;v[DONE]=d};selected="";page="Home"},modifier=Modifier.fillMaxWidth()){Text("Completa lezione · +20 XP")}
+     Button(onClick={scope.launch{ctx.store.edit{v->val d=(v[DONE]?: emptySet()).toMutableSet();if(d.add(lesson.id))v[XP]=(v[XP]?:0)+20;v[DONE]=d};selected="";page="Home"}},modifier=Modifier.fillMaxWidth()){Text("Completa lezione · +20 XP")}
     }else when(page){
      "Home"->{Text("LISAN  /  IL TUO PERCORSO",color=Green,fontWeight=FontWeight.Bold);Text("Marḥaba.",color=Forest,fontSize=34.sp,fontWeight=FontWeight.Bold);Text("Il tuo arabo comincia da qui.");Card(colors=CardDefaults.cardColors(containerColor=Forest)){Column(Modifier.padding(20.dp)){Text("IL TUO PERCORSO · LIVELLO A0",color=Paper);Text("Le prime parole, le prime conversazioni.",color=Paper,fontSize=23.sp,fontWeight=FontWeight.Bold);Text(done.size.toString()+" lezioni · "+xp+" XP",color=Paper)}};Button(onClick={page="Impara"},modifier=Modifier.fillMaxWidth()){Text("Inizia a imparare")};Button(onClick={page="Conversa"},modifier=Modifier.fillMaxWidth()){Text("Allenamento vocale")}}
      "Impara"->{Text("Impara, un passo alla volta.",color=Forest,fontSize=28.sp,fontWeight=FontWeight.Bold);Text("Arabo egiziano 75% · Arabo standard 25%");lessons.forEach{l->Card(Modifier.fillMaxWidth().clickable{selected=l.id},colors=CardDefaults.cardColors(containerColor=Paper)){Column(Modifier.padding(16.dp)){Text(l.dialect,color=Green,fontWeight=FontWeight.Bold);Text(l.title,color=Forest,fontSize=18.sp)}}}}
@@ -85,7 +85,7 @@ class MainActivity:ComponentActivity(){
 }
 @Composable private fun rememberTts():TextToSpeech?{
  val c=LocalContext.current;var engine by remember{mutableStateOf<TextToSpeech?>(null)}
- DisposableEffect(c){val t=TextToSpeech(c){s->if(s==TextToSpeech.SUCCESS){try{t.language=Locale("ar","EG")}catch(_:Exception){}}};engine=t;onDispose{t.stop();t.shutdown();engine=null}}
+ DisposableEffect(c){val holder=arrayOfNulls<TextToSpeech>(1);val t=TextToSpeech(c){s->if(s==TextToSpeech.SUCCESS){try{holder[0]?.language=Locale("ar","EG")}catch(_:Exception){}}};holder[0]=t;engine=t;onDispose{t.stop();t.shutdown();engine=null}}
  return engine
 }
 @Composable private fun Speak(){
