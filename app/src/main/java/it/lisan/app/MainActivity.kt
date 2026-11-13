@@ -110,7 +110,7 @@ class MainActivity:ComponentActivity(){
                 listOf("Home","Impara","Voce","Ripasso","Profilo").forEach { t ->
                     NavigationBarItem(selected=page==t,onClick={page=t},icon={
                         Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Ripasso"->Icons.Default.Replay;else->Icons.Default.Tune},t)
-                    },label={Text(t,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest))
+                    },label={Text(t,fontSize=11.sp,fontWeight=if(page==t) FontWeight.Bold else FontWeight.Medium,maxLines=1)},alwaysShowLabel=true,colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest,unselectedTextColor=Muted))
                 }
             } }
         ) { padding ->
@@ -121,10 +121,10 @@ class MainActivity:ComponentActivity(){
                         selected="";page="Home"
                     })
                 } else when(page){
-                    "Home" -> HomeScreen(xp,done.size,mix.msa,onLearn={page="Impara"},onTalk={page="Voce"},onSettings={page="Profilo"})
+                    "Home" -> HomeScreen(xp,done.size,mix.msa,onLearn={page="Impara"},onTalk={page="Voce"},onSettings={page="Profilo"},onReview={page="Ripasso"},onProfessor={page="Professore"})
                     "Impara" -> LearnScreen(activeLessons, mix, done, onSelect={selected=it})
                     "Voce" -> Speak(mix)
-                    // Professore temporaneamente sospeso: schermata conservata per una futura riattivazione.
+                    "Professore" -> ProfessorScreen()
                     "Ripasso" -> ReviewScreen(done.size,(lessons + createEndlessLessons(activeLessons,1000)).distinctBy{it.id}.filter{done.contains(it.id)},onSelect={selected=it})
                     else -> ProfileScreen(mix,onMixChange={newMix -> scope.launch { ctx.store.edit { p -> p[EGY]=newMix.egy;p[MOR]=newMix.mor;p[ALG]=newMix.alg;p[TUN]=newMix.tun } }})
                 }
@@ -140,16 +140,16 @@ class MainActivity:ComponentActivity(){
     }
 }
 @Composable private fun Header(eyebrow:String,title:String,subtitle:String?=null){
-    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){
-        Column(Modifier.weight(1f)) {
-            Text(eyebrow.uppercase(),color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.4.sp)
-            Text(title,color=Forest,fontSize=29.sp,fontWeight=FontWeight.ExtraBold,lineHeight=34.sp)
-            if(subtitle!=null) Text(subtitle,color=Muted,fontSize=14.sp)
+    Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(12.dp)){
+        Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)) {
+            Text(eyebrow.uppercase(),color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.1.sp,lineHeight=15.sp)
+            Text(title,color=Forest,fontSize=26.sp,fontWeight=FontWeight.ExtraBold,lineHeight=31.sp)
+            if(subtitle!=null) Text(subtitle,color=Muted,fontSize=14.sp,lineHeight=20.sp)
         }
-        BrandMark(size=48)
+        BrandMark(size=42)
     }
 }
-@Composable private fun HomeScreen(xp:Int,completed:Int,msa:Int,onLearn:()->Unit,onTalk:()->Unit,onSettings:()->Unit){
+@Composable private fun HomeScreen(xp:Int,completed:Int,msa:Int,onLearn:()->Unit,onTalk:()->Unit,onSettings:()->Unit,onReview:()->Unit,onProfessor:()->Unit){
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){
         item { Header("Benvenuto in LISAN","Marḥaba.","L'arabo, con la voce e le parole di ogni giorno.") }
         item {
@@ -157,7 +157,7 @@ class MainActivity:ComponentActivity(){
                 Box(Modifier.background(Brush.linearGradient(listOf(Forest,Deep))).padding(22.dp)){
                     Column(verticalArrangement=Arrangement.spacedBy(14.dp)){
                         Row(verticalAlignment=Alignment.CenterVertically){Text("IL TUO PERCORSO",color=Gold,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.5.sp);Spacer(Modifier.weight(1f));Text("LIVELLO A0",color=Mint,fontSize=11.sp)}
-                        Text("Una lingua viva.\nQuattro voci da scoprire.",color=Color.White,fontSize=27.sp,fontWeight=FontWeight.Bold,lineHeight=32.sp)
+                        Text("Una lingua viva.\nQuattro voci da scoprire.",color=Color.White,fontSize=25.sp,fontWeight=FontWeight.Bold,lineHeight=31.sp)
                         Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
                             StatPill("$completed lezioni",Icons.Default.MenuBook)
                             StatPill("$xp XP",Icons.Default.Bolt)
@@ -172,6 +172,12 @@ class MainActivity:ComponentActivity(){
             Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
                 ActionCard("Lezioni","Dialetti e parole",Icons.Default.MenuBook,Modifier.weight(1f),onLearn)
                 ActionCard("Parla","Allenati a voce",Icons.Default.Mic,Modifier.weight(1f),onTalk)
+            }
+        }
+        item {
+            Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
+                ActionCard("Ripasso","Rivedi le lezioni",Icons.Default.Replay,Modifier.weight(1f),onReview)
+                ActionCard("Professore","Area didattica",Icons.Default.School,Modifier.weight(1f),onProfessor)
             }
         }
         item {
@@ -236,9 +242,9 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
                     Row(verticalAlignment=Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("IL TUO AVANZAMENTO",color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
-                            Text("$completedCount di \${allLessons.size} lezioni completate",color=Forest,fontWeight=FontWeight.Bold,fontSize=16.sp)
+                            Text("$completedCount di ${allLessons.size} lezioni completate",color=Forest,fontWeight=FontWeight.Bold,fontSize=16.sp)
                         }
-                        Text("\${if(allLessons.isEmpty()) 0 else (completedCount*100/allLessons.size)}%",color=Teal,fontWeight=FontWeight.ExtraBold,fontSize=20.sp)
+                        Text("${if(allLessons.isEmpty()) 0 else (completedCount*100/allLessons.size)}%",color=Teal,fontWeight=FontWeight.ExtraBold,fontSize=20.sp)
                     }
                     LinearProgressIndicator(progress={if(allLessons.isEmpty()) 0f else completedCount.toFloat()/allLessons.size},modifier=Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),color=Teal,trackColor=Mint)
                     Text("Le lezioni completate restano disponibili per ripassare.",color=Muted,fontSize=12.sp)
@@ -261,7 +267,7 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
     Card(modifier=Modifier.fillMaxWidth().clickable{onSelect(l.id)},colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){
         Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
             Box(Modifier.size(44.dp).background(Mint,CircleShape),contentAlignment=Alignment.Center){Text("ع",color=Forest,fontSize=24.sp,fontWeight=FontWeight.Bold)}
-            Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(l.dialect,color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp);Text(l.title,color=Forest,fontSize=17.sp,fontWeight=FontWeight.Bold)}
+            Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(l.dialect,color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp);Text(l.title,color=Forest,fontSize=16.sp,fontWeight=FontWeight.Bold,lineHeight=21.sp,maxLines=2)}
             if(isCompleted) { Icon(Icons.Default.CheckCircle,null,tint=Teal,modifier=Modifier.size(27.dp)) } else { Icon(Icons.Default.PlayCircle,null,tint=Teal,modifier=Modifier.size(28.dp)) }
         }
     }
@@ -367,9 +373,9 @@ private fun localeForDialect(key:String):Locale = when(key) {
             Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp),modifier=Modifier.fillMaxWidth()){
                 Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
                     Row(verticalAlignment=Alignment.CenterVertically){Text("ESPRESSIONE",color=Muted,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp);Spacer(Modifier.weight(1f));IconButton(onClick={tts?.speak(phrase.ar,TextToSpeech.QUEUE_FLUSH,null,"phrase")}){Icon(Icons.Default.VolumeUp,"Ascolta",tint=Teal)}}
-                    Text(phrase.ar,color=Forest,fontSize=31.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth())
-                    Text(phrase.latin,color=Teal,fontWeight=FontWeight.SemiBold,fontSize=15.sp)
-                    Text(phrase.it,color=Forest,fontSize=16.sp)
+                    Text(phrase.ar,color=Forest,fontSize=34.sp,lineHeight=44.sp,textAlign=TextAlign.End,modifier=Modifier.fillMaxWidth())
+                    Text(phrase.latin,color=Teal,fontWeight=FontWeight.SemiBold,fontSize=16.sp,lineHeight=22.sp)
+                    Text(phrase.it,color=Forest,fontSize=16.sp,lineHeight=23.sp)
                 }
             }
         }
@@ -447,8 +453,8 @@ private fun answerProfessor(question:String):ProfessorAnswer {
         item {
             Card(colors=CardDefaults.cardColors(containerColor=Forest),shape=RoundedCornerShape(22.dp)){
                 Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
-                    Row(verticalAlignment=Alignment.CenterVertically){BrandMark(size=42);Spacer(Modifier.width(12.dp));Column{Text("LISAN · PROFESSORE",color=Gold,fontSize=11.sp,fontWeight=FontWeight.Bold);Text("Impariamo un passo alla volta",color=Color.White,fontWeight=FontWeight.Bold,fontSize=17.sp)}}
-                    Text("Scrivi un dubbio in italiano o in arabo. Se una risposta non è verificata, te lo dirò chiaramente.",color=Mint,fontSize=13.sp,lineHeight=19.sp)
+                    Row(verticalAlignment=Alignment.CenterVertically){BrandMark(size=42);Spacer(Modifier.width(12.dp));Column{Text("LISAN · PROFESSORE",color=Gold,fontSize=11.sp,fontWeight=FontWeight.Bold);Text("Insegnante personale",color=Color.White,fontWeight=FontWeight.Bold,fontSize=17.sp)}}
+                    Text("Sezione in sviluppo. Puoi consultare le spiegazioni didattiche integrate; il collegamento a un vero assistente AI sarà attivato in una prossima versione.",color=Mint,fontSize=14.sp,lineHeight=21.sp)
                 }
             }
         }
@@ -475,7 +481,7 @@ private fun answerProfessor(question:String):ProfessorAnswer {
                             Text(a.arabic,color=Forest,fontSize=30.sp,modifier=Modifier.fillMaxWidth(),textAlign=TextAlign.End)
                             Text(a.latin,color=Teal,fontWeight=FontWeight.SemiBold)
                         }
-                        Text("Questa risposta proviene dalla guida didattica integrata, non da una verifica in tempo reale con un docente madrelingua.",color=Muted,fontSize=11.sp,lineHeight=16.sp)
+                        Text("Risposta dalla guida didattica integrata: non è una verifica in tempo reale con un docente madrelingua.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
                         Divider(color=Mint)
                         Text("Questa spiegazione ti è stata utile?",color=Forest,fontWeight=FontWeight.Bold,fontSize=13.sp)
                         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
