@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleDisplayName</key><string>LISAN</string>
+<key>CFBundleIdentifier</key><string>it.lisan.ios</string>
+<key>CFBundleName</key><string>LISAN</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>1.0.0</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>LSRequiresIPhoneOS</key><true/>
+<key>NSMicrophoneUsageDescription</key><string>LISAN usa il microfono per esercitarti nella pronuncia araba.</string>
+<key>NSSpeechRecognitionUsageDescription</key><string>LISAN usa il riconoscimento vocale per trascrivere le tue frasi in arabo.</string>
+<key>UILaunchScreen</key><dict/>
+</dict></plist>
