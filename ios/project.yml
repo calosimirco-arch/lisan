@@ -8,7 +8,7 @@ targets:
     type: application
     platform: iOS
     sources:
-      - path: LISAN
+      - path: LISAN/ContentView.swift
     info:
       path: LISAN/Info.plist
       properties:
