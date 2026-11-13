@@ -107,25 +107,25 @@ class MainActivity:ComponentActivity(){
         Scaffold(
             containerColor=Ivory,
             bottomBar={ if(lesson==null) NavigationBar(containerColor=Paper,contentColor=Forest) {
-                listOf("Home","Impara","Voce","Professore","Ripasso","Profilo").forEach { t ->
+                listOf("Home","Impara","Voce","Ripasso","Profilo").forEach { t ->
                     NavigationBarItem(selected=page==t,onClick={page=t},icon={
-                        Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Professore"->Icons.Default.School;"Ripasso"->Icons.Default.Replay;else->Icons.Default.Tune},t)
+                        Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Ripasso"->Icons.Default.Replay;else->Icons.Default.Tune},t)
                     },label={Text(t,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest))
                 }
             } }
         ) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
                 if(lesson!=null){
-                    LessonScreen(lesson, onBack={selected=""}, onComplete={
+                    LessonScreen(lesson, alreadyCompleted=done.contains(lesson.id), onBack={selected=""}, onComplete={
                         scope.launch { ctx.store.edit { v -> val d=(v[DONE]?:emptySet()).toMutableSet(); if(d.add(lesson.id))v[XP]=(v[XP]?:0)+20;v[DONE]=d } }
                         selected="";page="Home"
                     })
                 } else when(page){
                     "Home" -> HomeScreen(xp,done.size,mix.msa,onLearn={page="Impara"},onTalk={page="Voce"},onSettings={page="Profilo"})
-                    "Impara" -> LearnScreen(activeLessons, mix, onSelect={selected=it})
+                    "Impara" -> LearnScreen(activeLessons, mix, done, onSelect={selected=it})
                     "Voce" -> Speak(mix)
-                    "Professore" -> ProfessorScreen()
-                    "Ripasso" -> ReviewScreen(done.size,lessons.filter{done.contains(it.id)},onSelect={selected=it})
+                    // Professore temporaneamente sospeso: schermata conservata per una futura riattivazione.
+                    "Ripasso" -> ReviewScreen(done.size,(lessons + createEndlessLessons(activeLessons,1000)).distinctBy{it.id}.filter{done.contains(it.id)},onSelect={selected=it})
                     else -> ProfileScreen(mix,onMixChange={newMix -> scope.launch { ctx.store.edit { p -> p[EGY]=newMix.egy;p[MOR]=newMix.mor;p[ALG]=newMix.alg;p[TUN]=newMix.tun } }})
                 }
             }
@@ -217,7 +217,7 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
     }
 }
 
-@Composable private fun LearnScreen(items:List<Lesson>,mix:Mix,onSelect:(String)->Unit){
+@Composable private fun LearnScreen(items:List<Lesson>,mix:Mix,done:Set<String>,onSelect:(String)->Unit){
     var extraCount by rememberSaveable { mutableIntStateOf(12) }
     val endless = remember(items, extraCount) { createEndlessLessons(items, extraCount) }
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
@@ -228,9 +228,26 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
             }
         }
         if(items.isEmpty()) item { Text("Imposta le percentuali dei dialetti nel Profilo per iniziare.",color=Muted) }
+        val allLessons=items+endless
+        val completedCount=allLessons.count{done.contains(it.id)}
+        item {
+            Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp),verticalArrangement=Arrangement.spacedBy(9.dp)) {
+                    Row(verticalAlignment=Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("IL TUO AVANZAMENTO",color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
+                            Text("$completedCount di \${allLessons.size} lezioni completate",color=Forest,fontWeight=FontWeight.Bold,fontSize=16.sp)
+                        }
+                        Text("\${if(allLessons.isEmpty()) 0 else (completedCount*100/allLessons.size)}%",color=Teal,fontWeight=FontWeight.ExtraBold,fontSize=20.sp)
+                    }
+                    LinearProgressIndicator(progress={if(allLessons.isEmpty()) 0f else completedCount.toFloat()/allLessons.size},modifier=Modifier.fillMaxWidth().height(8.dp).clip(CircleShape),color=Teal,trackColor=Mint)
+                    Text("Le lezioni completate restano disponibili per ripassare.",color=Muted,fontSize=12.sp)
+                }
+            }
+        }
         item { Text("PERCORSO CONTINUO",color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.3.sp) }
-        items(items){ l -> LessonRow(l,onSelect) }
-        items(endless){ l -> LessonRow(l,onSelect) }
+        items(items){ l -> LessonRow(l,done.contains(l.id),onSelect) }
+        items(endless){ l -> LessonRow(l,done.contains(l.id),onSelect) }
         item {
             OutlinedButton(onClick={extraCount += 12},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)) {
                 Icon(Icons.Default.Add,null); Spacer(Modifier.width(8.dp)); Text("Genera altre 12 lezioni")
@@ -240,12 +257,12 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
     }
 }
 
-@Composable private fun LessonRow(l:Lesson,onSelect:(String)->Unit) {
+@Composable private fun LessonRow(l:Lesson,isCompleted:Boolean,onSelect:(String)->Unit) {
     Card(modifier=Modifier.fillMaxWidth().clickable{onSelect(l.id)},colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){
         Row(Modifier.padding(16.dp),verticalAlignment=Alignment.CenterVertically){
             Box(Modifier.size(44.dp).background(Mint,CircleShape),contentAlignment=Alignment.Center){Text("ع",color=Forest,fontSize=24.sp,fontWeight=FontWeight.Bold)}
             Spacer(Modifier.width(12.dp));Column(Modifier.weight(1f)){Text(l.dialect,color=Teal,fontSize=10.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp);Text(l.title,color=Forest,fontSize=17.sp,fontWeight=FontWeight.Bold)}
-            Icon(Icons.Default.PlayCircle,null,tint=Teal,modifier=Modifier.size(28.dp))
+            if(isCompleted) { Icon(Icons.Default.CheckCircle,null,tint=Teal,modifier=Modifier.size(27.dp)) } else { Icon(Icons.Default.PlayCircle,null,tint=Teal,modifier=Modifier.size(28.dp)) }
         }
     }
 }
@@ -342,7 +359,7 @@ private fun localeForDialect(key:String):Locale = when(key) {
     else -> Locale.forLanguageTag("ar")
 }
 
-@Composable private fun LessonScreen(lesson:Lesson,onBack:()->Unit,onComplete:()->Unit){
+@Composable private fun LessonScreen(lesson:Lesson,alreadyCompleted:Boolean,onBack:()->Unit,onComplete:()->Unit){
     val tts=rememberTts(lesson.key)
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
         item { Text("‹  INDIETRO",color=Teal,fontWeight=FontWeight.Bold,modifier=Modifier.clickable(onClick=onBack));Spacer(Modifier.height(8.dp));Text(lesson.dialect,color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.4.sp);Text(lesson.title,color=Forest,fontSize=29.sp,fontWeight=FontWeight.ExtraBold) }
@@ -356,7 +373,8 @@ private fun localeForDialect(key:String):Locale = when(key) {
                 }
             }
         }
-        item { Button(onClick=onComplete,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)){Text("Completa lezione  ·  +20 XP")} }
+        item { if(alreadyCompleted) Text("✓  LEZIONE GIÀ COMPLETATA",color=Teal,fontWeight=FontWeight.Bold,fontSize=12.sp) }
+        item { Button(onClick=onComplete,modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)){Text(if(alreadyCompleted) "Ripeti lezione" else "Segna come completata  ·  +20 XP")} }
     }
 }
 @Composable private fun ReviewScreen(count:Int,completed:List<Lesson>,onSelect:(String)->Unit){
