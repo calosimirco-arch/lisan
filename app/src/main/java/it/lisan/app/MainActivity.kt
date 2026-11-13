@@ -53,6 +53,7 @@ private val Muted = Color(0xFF71817A)
 private val android.content.Context.store by preferencesDataStore("lisan_progress")
 private val XP = intPreferencesKey("xp")
 private val DONE = stringSetPreferencesKey("done")
+private val PROFESSOR_NOTES = stringSetPreferencesKey("professor_notes")
 private val EGY = intPreferencesKey("mix_egy")
 private val MOR = intPreferencesKey("mix_mor")
 private val ALG = intPreferencesKey("mix_alg")
@@ -106,9 +107,9 @@ class MainActivity:ComponentActivity(){
         Scaffold(
             containerColor=Ivory,
             bottomBar={ if(lesson==null) NavigationBar(containerColor=Paper,contentColor=Forest) {
-                listOf("Home","Impara","Conversa","Ripasso","Profilo").forEach { t ->
+                listOf("Home","Impara","Voce","Professore","Ripasso","Profilo").forEach { t ->
                     NavigationBarItem(selected=page==t,onClick={page=t},icon={
-                        Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Conversa"->Icons.Default.Mic;"Ripasso"->Icons.Default.Replay;else->Icons.Default.Tune},t)
+                        Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Professore"->Icons.Default.School;"Ripasso"->Icons.Default.Replay;else->Icons.Default.Tune},t)
                     },label={Text(t,fontSize=10.sp)},colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest))
                 }
             } }
@@ -120,9 +121,10 @@ class MainActivity:ComponentActivity(){
                         selected="";page="Home"
                     })
                 } else when(page){
-                    "Home" -> HomeScreen(xp,done.size,mix.msa,onLearn={page="Impara"},onTalk={page="Conversa"},onSettings={page="Profilo"})
+                    "Home" -> HomeScreen(xp,done.size,mix.msa,onLearn={page="Impara"},onTalk={page="Voce"},onSettings={page="Profilo"})
                     "Impara" -> LearnScreen(activeLessons, mix, onSelect={selected=it})
-                    "Conversa" -> Speak(mix)
+                    "Voce" -> Speak(mix)
+                    "Professore" -> ProfessorScreen()
                     "Ripasso" -> ReviewScreen(done.size,lessons.filter{done.contains(it.id)},onSelect={selected=it})
                     else -> ProfileScreen(mix,onMixChange={newMix -> scope.launch { ctx.store.edit { p -> p[EGY]=newMix.egy;p[MOR]=newMix.mor;p[ALG]=newMix.alg;p[TUN]=newMix.tun } }})
                 }
@@ -392,6 +394,92 @@ private fun localeForDialect(key:String):Locale = when(key) {
     }
     return engine
 }
+
+private data class ProfessorAnswer(val title:String,val body:String,val arabic:String="",val latin:String="")
+
+private fun answerProfessor(question:String):ProfessorAnswer {
+    val q=question.lowercase(Locale.ITALIAN).trim()
+    return when {
+        q.contains("izzay") || q.contains("إزيك") || q.contains("come stai") ->
+            ProfessorAnswer("Come chiedere «come stai?»","In egiziano colloquiale puoi dire «izzayyak?» rivolgendoti a un uomo e «izzayyik?» a una donna. La forma e la vocale finale cambiano in base all'interlocutore.","إزيك؟","izzayyak? (a un uomo) · izzayyik? (a una donna)")
+        q.contains("shukran") || q.contains("شكرا") || q.contains("grazie") ->
+            ProfessorAnswer("Dire grazie","«Shukran» è una forma comune e comprensibile in arabo standard e in molti dialetti. In marocchino è molto comune anche «shukran bzzaf» per dire «grazie mille».","شكراً","shukran · shukran bzzaf")
+        q.contains("dialett") || q.contains("differenza") || q.contains("marocch") ->
+            ProfessorAnswer("I dialetti non sono intercambiabili","Egiziano, marocchino, algerino e tunisino condividono molte radici, ma pronuncia, lessico e alcune strutture cambiano. Per rispondere bene serve sapere quale varietà vuoi usare e in quale situazione.")
+        q.contains("pronunc") || q.contains("vocal") || q.contains("letter") ->
+            ProfessorAnswer("Un consiglio sulla pronuncia","La traslitterazione italiana è solo un aiuto: alcuni suoni arabi, come ع (ʿayn), ح (ḥ) e ق (q), non hanno un equivalente perfetto in italiano. Ascolta più volte un parlante nativo e ripeti lentamente. La voce del telefono può non riprodurre fedelmente un dialetto.")
+        q.contains("salut") || q.contains("ciao") ->
+            ProfessorAnswer("Un saluto utile","In arabo standard puoi usare «as-salāmu ʿalaykum». In marocchino colloquiale è comune anche «s-slam, labas?» per salutare e chiedere se va tutto bene.","السلام عليكم","as-salāmu ʿalaykum")
+        q.contains("non cap") || q.contains("ripeti") ->
+            ProfessorAnswer("Chiedere di ripetere","Una frase utile in più varietà è «puoi ripetere?». La forma esatta cambia da paese a paese: dimmi il dialetto e ti preparo la versione più adatta.")
+        else -> ProfessorAnswer("Studiamo insieme","Ho ricevuto la tua domanda, ma questa versione di LISAN non è ancora collegata a un modello AI online. Per evitare di inventare una regola, non ti darò una risposta spacciandola per certa. Specifica il dialetto (egiziano, marocchino, algerino, tunisino o standard), oppure chiedimi di spiegare una delle frasi già presenti nelle lezioni.")
+    }
+}
+
+@Composable private fun ProfessorScreen(){
+    val context=LocalContext.current
+    val scope= rememberCoroutineScope()
+    val notes by context.store.data.map { it[PROFESSOR_NOTES] ?: emptySet() }.collectAsState(initial=emptySet())
+    var question by rememberSaveable { mutableStateOf("") }
+    var answer by remember { mutableStateOf<ProfessorAnswer?>(null) }
+    var feedback by rememberSaveable { mutableStateOf("") }
+    val suggestions=listOf("Qual è la differenza tra arabo egiziano e marocchino?","Come si pronuncia la lettera ع?","Come dico grazie in marocchino?")
+    LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
+        item { Header("Il tuo insegnante","Chiedi al professore.","Dubbi, grammatica, pronuncia e differenze tra dialetti.") }
+        item {
+            Card(colors=CardDefaults.cardColors(containerColor=Forest),shape=RoundedCornerShape(22.dp)){
+                Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+                    Row(verticalAlignment=Alignment.CenterVertically){BrandMark(size=42);Spacer(Modifier.width(12.dp));Column{Text("LISAN · PROFESSORE",color=Gold,fontSize=11.sp,fontWeight=FontWeight.Bold);Text("Impariamo un passo alla volta",color=Color.White,fontWeight=FontWeight.Bold,fontSize=17.sp)}}
+                    Text("Scrivi un dubbio in italiano o in arabo. Se una risposta non è verificata, te lo dirò chiaramente.",color=Mint,fontSize=13.sp,lineHeight=19.sp)
+                }
+            }
+        }
+        item {
+            Text("PROVA A CHIEDERE",color=Teal,fontWeight=FontWeight.Bold,fontSize=11.sp,letterSpacing=1.2.sp)
+            suggestions.forEach { sample ->
+                SuggestionChip(onClick={question=sample},label={Text(sample)},modifier=Modifier.padding(end=5.dp,bottom=5.dp))
+            }
+        }
+        item {
+            OutlinedTextField(value=question,onValueChange={question=it},modifier=Modifier.fillMaxWidth(),label={Text("Scrivi la tua domanda")},placeholder={Text("Es. Perché questa parola si pronuncia così?")},minLines=2,maxLines=4,shape=RoundedCornerShape(16.dp))
+            Button(onClick={answer=answerProfessor(question);feedback=""},enabled=question.isNotBlank(),modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)){
+                Icon(Icons.Default.Send,null);Spacer(Modifier.width(8.dp));Text("Chiedi al professore")
+            }
+        }
+        answer?.let { a ->
+            item {
+                Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(20.dp)){
+                    Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
+                        Text("SPIEGAZIONE",color=Teal,fontWeight=FontWeight.Bold,fontSize=11.sp,letterSpacing=1.sp)
+                        Text(a.title,color=Forest,fontWeight=FontWeight.ExtraBold,fontSize=21.sp)
+                        Text(a.body,color=Forest,fontSize=15.sp,lineHeight=22.sp)
+                        if(a.arabic.isNotBlank()){
+                            Text(a.arabic,color=Forest,fontSize=30.sp,modifier=Modifier.fillMaxWidth(),textAlign=TextAlign.End)
+                            Text(a.latin,color=Teal,fontWeight=FontWeight.SemiBold)
+                        }
+                        Text("Questa risposta proviene dalla guida didattica integrata, non da una verifica in tempo reale con un docente madrelingua.",color=Muted,fontSize=11.sp,lineHeight=16.sp)
+                        Divider(color=Mint)
+                        Text("Questa spiegazione ti è stata utile?",color=Forest,fontWeight=FontWeight.Bold,fontSize=13.sp)
+                        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                            OutlinedButton(onClick={feedback="utile";scope.launch{context.store.edit{p->p[PROFESSOR_NOTES]=(p[PROFESSOR_NOTES]?:emptySet())+"utile:"+question.take(100)}}}){Icon(Icons.Default.ThumbUp,null);Spacer(Modifier.width(5.dp));Text("Sì")}
+                            OutlinedButton(onClick={feedback="da rivedere";scope.launch{context.store.edit{p->p[PROFESSOR_NOTES]=(p[PROFESSOR_NOTES]?:emptySet())+"rivedere:"+question.take(100)}}}){Icon(Icons.Default.Flag,null);Spacer(Modifier.width(5.dp));Text("Da rivedere")}
+                        }
+                        if(feedback.isNotBlank()) Text("Feedback salvato sul dispositivo. Aiuterà a tenere traccia delle spiegazioni da migliorare.",color=Teal,fontSize=12.sp)
+                    }
+                }
+            }
+        }
+        item {
+            Card(colors=CardDefaults.cardColors(containerColor=Mint),shape=RoundedCornerShape(18.dp)){
+                Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(5.dp)){
+                    Text("IL PROFESSORE IMPARA CON TE",color=Forest,fontWeight=FontWeight.Bold,fontSize=13.sp)
+                    Text(notes.size.toString()+" feedback salvati su questo telefono. Per ora sono una memoria locale: non addestrano automaticamente un modello AI.",color=Forest,fontSize=12.sp,lineHeight=18.sp)
+                }
+            }
+        }
+    }
+}
+
 @Composable private fun Speak(mix:Mix){
     val c=LocalContext.current
     var result by rememberSaveable{mutableStateOf("La frase riconosciuta apparirà qui.")}
