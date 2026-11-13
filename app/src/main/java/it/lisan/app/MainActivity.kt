@@ -203,24 +203,62 @@ class MainActivity:ComponentActivity(){
         }
     }
 }
-private val endlessTopics = listOf(
-    "Costruisci una conversazione", "Domande e risposte", "Al mercato", "In viaggio",
-    "Al bar", "Conosci nuove persone", "Orientarsi in città", "Racconta la tua giornata",
-    "Ascolto e ripetizione", "Frasi in contesto", "Ripasso intelligente", "Dialogo completo"
+// Curriculum reale: ogni unità contiene espressioni nuove, non rotazioni delle lezioni iniziali.
+private val additionalCurriculum = listOf(
+    Lesson("eg_food","Al ristorante","EGIZIANO","egy",listOf(
+        Phrase("عايز المنيو","ʿāyez el-menيو","Vorrei il menu"), Phrase("ممكن مية؟","momken mayya?","Posso avere dell'acqua?"),
+        Phrase("الحساب لو سمحت","el-ḥesāb law samaḥt","Il conto, per favore"), Phrase("الأكل جميل","el-akl gamīl","Il cibo è buonissimo"))),
+    Lesson("eg_market","Fare acquisti","EGIZIANO","egy",listOf(
+        Phrase("بكام ده؟","bekām da?","Quanto costa questo?"), Phrase("غالي أوي","ghāli awi","È molto caro"),
+        Phrase("ممكن تخفيض؟","momken takhfīḍ?","È possibile uno sconto?"), Phrase("هدفع كاش","h-adfaʿ kāsh","Pago in contanti"))),
+    Lesson("eg_directions","Chiedere indicazioni","EGIZIANO","egy",listOf(
+        Phrase("المحطة فين؟","el-maḥaṭṭa fēn?","Dov'è la stazione?"), Phrase("على طول","ʿala ṭūl","Sempre dritto"),
+        Phrase("يمين ولا شمال؟","yamīn walla shemāl?","A destra o a sinistra?"), Phrase("بعيد من هنا؟","baʿīd men henā?","È lontano da qui?"))),
+    Lesson("eg_daily","La giornata","EGIZIANO","egy",listOf(
+        Phrase("بصحى الساعة سبعة","baṣḥa es-sāʿa sabʿa","Mi sveglio alle sette"), Phrase("بروح الشغل","barūḥ esh-shoghl","Vado al lavoro"),
+        Phrase("برجع البيت بالليل","barġaʿ el-bēt bel-lēl","Torno a casa la sera"), Phrase("أنا تعبان النهارده","ana taʿbān ennahārda","Oggi sono stanco"))),
+    Lesson("mor_food","Al ristorante","MAROCCHINO · DARIJA","mor",listOf(
+        Phrase("بغيت المينيو","bghit l-menu","Vorrei il menu"), Phrase("عافاك جيب ليا الما","ʿafak jib lia l-ma","Per favore portami dell'acqua"),
+        Phrase("الحساب عافاك","l-ḥساب ʿafak","Il conto, per favore"), Phrase("الماكلة بنينة","l-makla bnina","Il cibo è buono"))),
+    Lesson("mor_market","Al mercato","MAROCCHINO · DARIJA","mor",listOf(
+        Phrase("بشحال هادا؟","bshḥal hada?","Quanto costa questo?"), Phrase("غالي بزاف","ghali bzzaf","È molto caro"),
+        Phrase("نقص ليا شوية","nqeṣ lia shwiya","Fammi un piccolo sconto"), Phrase("غادي ناخدو","ghadi nakhdo","Lo prendo"))),
+    Lesson("mor_directions","In città","MAROCCHINO · DARIJA","mor",listOf(
+        Phrase("فين الطوبيس؟","fin ṭṭobis?","Dov'è l'autobus?"), Phrase("دور على اليمين","dur ʿla limin","Gira a destra"),
+        Phrase("سير نيشان","sir nishan","Vai dritto"), Phrase("واش قريب؟","wash qrib?","È vicino?"))),
+    Lesson("mor_daily","La routine","MAROCCHINO · DARIJA","mor",listOf(
+        Phrase("كنفيق مع السبعة","kanfiq mʿa s-sebʿa","Mi sveglio alle sette"), Phrase("كنمشي للخدمة","kanmshi l-khedma","Vado al lavoro"),
+        Phrase("كنرجع للعشية","kanrjeʿ l-ʿshiya","Ritorno nel pomeriggio"), Phrase("اليوم عيان","lyum ʿyan","Oggi sono stanco"))),
+    Lesson("alg_food","Al ristorante","ALGERINO · DARIJA","alg",listOf(
+        Phrase("عطيني القائمة","ʿṭini l-qayma","Dammi il menu"), Phrase("نحب ماء من فضلك","nḥeb ma men faḍlek","Vorrei dell'acqua, per favore"),
+        Phrase("الحساب من فضلك","el-ḥsab men faḍlek","Il conto, per favore"), Phrase("الماكلة بنينة","el-makla bnina","Il cibo è buono"))),
+    Lesson("alg_market","Comprare qualcosa","ALGERINO · DARIJA","alg",listOf(
+        Phrase("بشحال هذا؟","bshḥal hada?","Quanto costa questo?"), Phrase("غالي بزاف","ghali bzzaf","È molto caro"),
+        Phrase("ديرلي تخفيض","dirli takhfiḍ","Fammi uno sconto"), Phrase("نزيد نشوف","nzid nshuf","Continuo a guardare"))),
+    Lesson("alg_directions","Orientarsi","ALGERINO · DARIJA","alg",listOf(
+        Phrase("وين راهي المحطة؟","win rahi l-maḥaṭṭa?","Dov'è la stazione?"), Phrase("روح نيشان","ruḥ nishan","Vai dritto"),
+        Phrase("على اليمين","ʿla lymin","A destra"), Phrase("بعيد شوية؟","bʿid shwiya?","È un po' lontano?"))),
+    Lesson("alg_daily","La vita quotidiana","ALGERINO · DARIJA","alg",listOf(
+        Phrase("نوض مع الستة","nuḍ mʿa s-setta","Mi alzo alle sei"), Phrase("نروح للخدمة","nruḥ l-khedma","Vado al lavoro"),
+        Phrase("نرجع مع العشية","nrjeʿ mʿa l-ʿshiya","Rientro nel pomeriggio"), Phrase("راني مقلق اليوم","rani mqelleq lyum","Oggi sono preoccupato"))),
+    Lesson("tn_food","Al ristorante","TUNISINO · DERJA","tun",listOf(
+        Phrase("نحب المينيو","nḥeb el-menu","Vorrei il menu"), Phrase("ماء من فضلك","ma men faḍlek","Acqua, per favore"),
+        Phrase("الحساب لو سمحت","el-ḥseb law samaḥt","Il conto, per favore"), Phrase("البنة هايلة","el-benna hayla","È buonissimo"))),
+    Lesson("tn_market","Fare la spesa","TUNISINO · DERJA","tun",listOf(
+        Phrase("بقداش هذا؟","bqaddech hedha?","Quanto costa questo?"), Phrase("غالي برشة","ghali barsha","È molto caro"),
+        Phrase("تنجم تنقصلي؟","tnajjem tn aqqesli?","Puoi farmi uno sconto?"), Phrase("باش ناخذ هذا","bash nakhou hedha","Prendo questo"))),
+    Lesson("tn_directions","Chiedere la strada","TUNISINO · DERJA","tun",listOf(
+        Phrase("وين المحطة؟","win el-maḥaṭṭa?","Dov'è la stazione?"), Phrase("دغري","doghri","Dritto"),
+        Phrase("على اليسار","ʿal yssar","A sinistra"), Phrase("قريب من غادي؟","qrib men ghadi?","È vicino da lì?"))),
+    Lesson("tn_daily","La giornata","TUNISINO · DERJA","tun",listOf(
+        Phrase("نفيق مع السبعة","nfiq mʿa s-sebʿa","Mi sveglio alle sette"), Phrase("نمشي للخدمة","nimshi lel-khedma","Vado al lavoro"),
+        Phrase("نروح للعشية","nrouḥ lel-ʿshiya","Torno nel pomeriggio"), Phrase("اليوم تعبان","el-yum taʿban","Oggi sono stanco")))
 )
 
 private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
-    if(base.isEmpty()) return emptyList()
-    return (0 until count).map { index ->
-        val source = base[index % base.size]
-        val cycle = index / base.size + 1
-        val topic = endlessTopics[index % endlessTopics.size]
-        val ordered = source.phrases
-        val offset = if(ordered.isEmpty()) 0 else index % ordered.size
-        val rotated = ordered.drop(offset) + ordered.take(offset)
-        val selected = rotated.take(minOf(rotated.size, (2 + cycle).coerceAtMost(5)))
-        Lesson("practice_${source.key}_${index}", "$topic · livello $cycle", source.dialect, source.key, selected)
-    }
+    if(base.isEmpty() || count<=0) return emptyList()
+    val activeKeys=base.map { it.key }.toSet()
+    return additionalCurriculum.filter { it.key in activeKeys }.take(count)
 }
 
 @Composable private fun LearnScreen(items:List<Lesson>,mix:Mix,done:Set<String>,onSelect:(String)->Unit){
