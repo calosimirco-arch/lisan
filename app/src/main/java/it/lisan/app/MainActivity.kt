@@ -110,7 +110,7 @@ class MainActivity:ComponentActivity(){
                 listOf("Home","Impara","Voce","Professore","Profilo").forEach { t ->
                     NavigationBarItem(selected=page==t,onClick={page=t},icon={
                         Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Professore"->Icons.Default.School;else->Icons.Default.Tune},t)
-                    },label={Text(t,fontSize=11.sp,fontWeight=if(page==t) FontWeight.Bold else FontWeight.Medium,maxLines=1)},alwaysShowLabel=true,colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest,unselectedTextColor=Muted))
+                    },label={Text(if(t=="Professore") "Prof." else t,fontSize=11.sp,fontWeight=if(page==t) FontWeight.Bold else FontWeight.Medium,maxLines=1)},alwaysShowLabel=true,colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest,unselectedTextColor=Muted))
                 }
             } }
         ) { padding ->
