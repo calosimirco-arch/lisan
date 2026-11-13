@@ -1,0 +1,45 @@
+name: Build LISAN iOS IPA (unsigned)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-ipa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Compile native iOS app
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Build for iPhone
+        working-directory: ios
+        run: |
+          xcodebuild -project LISAN.xcodeproj -scheme LISAN -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: Package unsigned IPA for free sideload signing
+        working-directory: ios
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/LISAN.app"
+          test -d "$APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/LISAN.app
+          /usr/bin/zip -qry LISAN-unsigned.ipa Payload
+      - name: Upload iOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: LISAN-iOS-unsigned-IPA
+          path: ios/LISAN-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
