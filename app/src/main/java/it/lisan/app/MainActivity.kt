@@ -276,6 +276,7 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
 @Composable private fun LearnScreen(items:List<Lesson>,mix:Mix,done:Set<String>,onSelect:(String)->Unit){
     var extraCount by rememberSaveable { mutableIntStateOf(12) }
     val endless = remember(items, extraCount) { createEndlessLessons(items, extraCount) }
+    val availableExtraCount = additionalCurriculum.count { extra -> items.any { it.key == extra.key } }
     LazyColumn(Modifier.fillMaxSize(),contentPadding=PaddingValues(20.dp),verticalArrangement=Arrangement.spacedBy(14.dp)){
         item { Header("Percorso di studio","Impara, a modo tuo.","Le lezioni seguono il mix di dialetti che hai scelto.") }
         item {
@@ -304,12 +305,12 @@ private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
         item { Text("PERCORSO CONTINUO",color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.3.sp) }
         items(items){ l -> LessonRow(l,done.contains(l.id),onSelect) }
         items(endless){ l -> LessonRow(l,done.contains(l.id),onSelect) }
-        item {
+        if(endless.size < availableExtraCount) item {
             OutlinedButton(onClick={extraCount += 12},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)) {
-                Icon(Icons.Default.Add,null); Spacer(Modifier.width(8.dp)); Text("Genera altre 12 lezioni")
+                Icon(Icons.Default.Add,null); Spacer(Modifier.width(8.dp)); Text("Mostra altre ${minOf(12,availableExtraCount-endless.size)} lezioni")
             }
-            Text("Le unità combinano progressivamente le frasi dei dialetti selezionati, alternando dialoghi, ascolto e ripasso. Il percorso continua senza un ultimo livello.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
         }
+        item { Text("Ogni unità introduce vocaboli e frasi specifici. Le lezioni disponibili dipendono dai dialetti attivati nel tuo profilo.",color=Muted,fontSize=12.sp,lineHeight=18.sp) }
     }
 }
 
