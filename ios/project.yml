@@ -1,0 +1,32 @@
+name: LISAN
+options:
+  bundleIdPrefix: it.lisan
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  LISAN:
+    type: application
+    platform: iOS
+    sources:
+      - path: LISAN
+    info:
+      path: LISAN/Info.plist
+      properties:
+        CFBundleDisplayName: LISAN
+        CFBundleIdentifier: it.lisan.ios
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.0.0"
+        UILaunchScreen: {}
+        NSMicrophoneUsageDescription: LISAN usa il microfono per esercitarti nella pronuncia araba.
+        NSSpeechRecognitionUsageDescription: LISAN usa il riconoscimento vocale per trascrivere le tue frasi in arabo.
+        UIRequiredDeviceCapabilities:
+          - arm64
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: it.lisan.ios
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGNING_ALLOWED: NO
