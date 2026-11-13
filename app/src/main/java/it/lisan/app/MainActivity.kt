@@ -44,12 +44,12 @@ import kotlin.math.roundToInt
 
 private val Forest = Color(0xFF123B35)
 private val Deep = Color(0xFF0B2927)
-private val Teal = Color(0xFF2D8A78)
+private val Teal = Color(0xFF246F60)
 private val Mint = Color(0xFFDDF1E9)
 private val Gold = Color(0xFFE6B96B)
 private val Ivory = Color(0xFFF5F4EE)
 private val Paper = Color(0xFFFFFEFA)
-private val Muted = Color(0xFF71817A)
+private val Muted = Color(0xFF596B63)
 private val android.content.Context.store by preferencesDataStore("lisan_progress")
 private val XP = intPreferencesKey("xp")
 private val DONE = stringSetPreferencesKey("done")
@@ -107,9 +107,9 @@ class MainActivity:ComponentActivity(){
         Scaffold(
             containerColor=Ivory,
             bottomBar={ if(lesson==null) NavigationBar(containerColor=Paper,contentColor=Forest) {
-                listOf("Home","Impara","Voce","Ripasso","Profilo").forEach { t ->
+                listOf("Home","Impara","Voce","Professore","Profilo").forEach { t ->
                     NavigationBarItem(selected=page==t,onClick={page=t},icon={
-                        Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Ripasso"->Icons.Default.Replay;else->Icons.Default.Tune},t)
+                        Icon(when(t){"Home"->Icons.Default.Home;"Impara"->Icons.Default.MenuBook;"Voce"->Icons.Default.Mic;"Professore"->Icons.Default.School;else->Icons.Default.Tune},t)
                     },label={Text(t,fontSize=11.sp,fontWeight=if(page==t) FontWeight.Bold else FontWeight.Medium,maxLines=1)},alwaysShowLabel=true,colors=NavigationBarItemDefaults.colors(selectedIconColor=Teal,indicatorColor=Mint,selectedTextColor=Forest,unselectedTextColor=Muted))
                 }
             } }
@@ -177,7 +177,7 @@ class MainActivity:ComponentActivity(){
         item {
             Row(horizontalArrangement=Arrangement.spacedBy(12.dp)){
                 ActionCard("Ripasso","Rivedi le lezioni",Icons.Default.Replay,Modifier.weight(1f),onReview)
-                ActionCard("Professore","Area didattica",Icons.Default.School,Modifier.weight(1f),onProfessor)
+                ActionCard("Professore","In sviluppo",Icons.Default.School,Modifier.weight(1f),onProfessor)
             }
         }
         item {
@@ -196,10 +196,10 @@ class MainActivity:ComponentActivity(){
 }
 @Composable private fun ActionCard(title:String,subtitle:String,icon:androidx.compose.ui.graphics.vector.ImageVector,modifier:Modifier,onClick:()->Unit){
     Card(modifier.clickable(onClick=onClick),colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(20.dp)){
-        Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
+        Column(Modifier.fillMaxWidth().heightIn(min=116.dp).padding(16.dp),verticalArrangement=Arrangement.spacedBy(8.dp)){
             Box(Modifier.size(42.dp).background(Mint,CircleShape),contentAlignment=Alignment.Center){Icon(icon,null,tint=Forest)}
-            Text(title,color=Forest,fontWeight=FontWeight.Bold,fontSize=17.sp)
-            Text(subtitle,color=Muted,fontSize=12.sp)
+            Text(title,color=Forest,fontWeight=FontWeight.Bold,fontSize=16.sp,lineHeight=20.sp,maxLines=1)
+            Text(subtitle,color=Muted,fontSize=13.sp,lineHeight=18.sp,maxLines=2)
         }
     }
 }
@@ -459,7 +459,7 @@ private fun answerProfessor(question:String):ProfessorAnswer {
             }
         }
         item {
-            Text("PROVA A CHIEDERE",color=Teal,fontWeight=FontWeight.Bold,fontSize=11.sp,letterSpacing=1.2.sp)
+            Text("PROVA A CHIEDERE",color=Teal,fontWeight=FontWeight.Bold,fontSize=12.sp,letterSpacing=1.1.sp)
             suggestions.forEach { sample ->
                 SuggestionChip(onClick={question=sample},label={Text(sample)},modifier=Modifier.padding(end=5.dp,bottom=5.dp))
             }
@@ -483,7 +483,7 @@ private fun answerProfessor(question:String):ProfessorAnswer {
                         }
                         Text("Risposta dalla guida didattica integrata: non è una verifica in tempo reale con un docente madrelingua.",color=Muted,fontSize=12.sp,lineHeight=18.sp)
                         Divider(color=Mint)
-                        Text("Questa spiegazione ti è stata utile?",color=Forest,fontWeight=FontWeight.Bold,fontSize=13.sp)
+                        Text("Questa spiegazione ti è stata utile?",color=Forest,fontWeight=FontWeight.Bold,fontSize=14.sp,lineHeight=20.sp)
                         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
                             OutlinedButton(onClick={feedback="utile";scope.launch{context.store.edit{p->p[PROFESSOR_NOTES]=(p[PROFESSOR_NOTES]?:emptySet())+"utile:"+question.take(100)}}}){Icon(Icons.Default.ThumbUp,null);Spacer(Modifier.width(5.dp));Text("Sì")}
                             OutlinedButton(onClick={feedback="da rivedere";scope.launch{context.store.edit{p->p[PROFESSOR_NOTES]=(p[PROFESSOR_NOTES]?:emptySet())+"rivedere:"+question.take(100)}}}){Icon(Icons.Default.Flag,null);Spacer(Modifier.width(5.dp));Text("Da rivedere")}
@@ -537,7 +537,7 @@ private fun answerProfessor(question:String):ProfessorAnswer {
         item {
             Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(20.dp)){
                 Column(Modifier.padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){
-                    Text("VARIETÀ DA ESERCITARE",color=Teal,fontSize=11.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
+                    Text("VARIETÀ DA ESERCITARE",color=Teal,fontSize=12.sp,fontWeight=FontWeight.Bold,letterSpacing=1.sp)
                     options.forEach{(key,label)->FilterChip(selected=dialect==key,onClick={dialect=key},label={Text(label)},leadingIcon=if(dialect==key){{Icon(Icons.Default.Check,null)}}else null)}
                 }
             }
@@ -552,7 +552,7 @@ private fun answerProfessor(question:String):ProfessorAnswer {
                 }
             }
         }
-        item { Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(16.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text("TRASCRIZIONE",color=Teal,fontWeight=FontWeight.Bold,fontSize=11.sp);Spacer(Modifier.weight(1f));IconButton(onClick={voice?.speak(result,TextToSpeech.QUEUE_FLUSH,null,"recognized")}){Icon(Icons.Default.VolumeUp,"Riascolta",tint=Teal)}};Text(result,color=Forest,fontSize=19.sp)}} }
+        item { Card(colors=CardDefaults.cardColors(containerColor=Paper),shape=RoundedCornerShape(18.dp)){Column(Modifier.padding(16.dp)){Row(verticalAlignment=Alignment.CenterVertically){Text("TRASCRIZIONE",color=Teal,fontWeight=FontWeight.Bold,fontSize=12.sp);Spacer(Modifier.weight(1f));IconButton(onClick={voice?.speak(result,TextToSpeech.QUEUE_FLUSH,null,"recognized")}){Icon(Icons.Default.VolumeUp,"Riascolta",tint=Teal)}};Text(result,color=Forest,fontSize=19.sp)}} }
         item { Text("Nota: la disponibilità del riconoscimento per i dialetti dipende dai servizi vocali installati sul telefono.",color=Muted,fontSize=12.sp,lineHeight=18.sp) }
     }
 }
