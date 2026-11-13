@@ -252,7 +252,19 @@ private val additionalCurriculum = listOf(
         Phrase("على اليسار","ʿal yssar","A sinistra"), Phrase("قريب من غادي؟","qrib men ghadi?","È vicino da lì?"))),
     Lesson("tn_daily","La giornata","TUNISINO · DERJA","tun",listOf(
         Phrase("نفيق مع السبعة","nfiq mʿa s-sebʿa","Mi sveglio alle sette"), Phrase("نمشي للخدمة","nimshi lel-khedma","Vado al lavoro"),
-        Phrase("نروح للعشية","nrouḥ lel-ʿshiya","Torno nel pomeriggio"), Phrase("اليوم تعبان","el-yum taʿban","Oggi sono stanco")))
+        Phrase("نروح للعشية","nrouḥ lel-ʿshiya","Torno nel pomeriggio"), Phrase("اليوم تعبان","el-yum taʿban","Oggi sono stanco"))),
+    Lesson("msa_food","Al ristorante","ARABO STANDARD","msa",listOf(
+        Phrase("أريد قائمة الطعام","urīdu qāʾimata aṭ-ṭaʿām","Vorrei il menu"), Phrase("هل لديكم ماء؟","hal ladaykum māʾ?","Avete dell'acqua?"),
+        Phrase("الفاتورة من فضلك","al-fātūra min faḍlik","Il conto, per favore"), Phrase("الطعام لذيذ","aṭ-ṭaʿām ladhīdh","Il cibo è delizioso"))),
+    Lesson("msa_travel","In viaggio","ARABO STANDARD","msa",listOf(
+        Phrase("أين المطار؟","ayna al-maṭār?","Dov'è l'aeroporto?"), Phrase("أريد تذكرة واحدة","urīdu tadhkiratan wāḥida","Vorrei un biglietto"),
+        Phrase("متى يغادر القطار؟","matā yughādir al-qiṭār?","Quando parte il treno?"), Phrase("أحتاج إلى سيارة أجرة","aḥtāju ilā sayyārati ujra","Ho bisogno di un taxi"))),
+    Lesson("msa_family","La famiglia","ARABO STANDARD","msa",listOf(
+        Phrase("هذه عائلتي","hādhihi ʿāʾilatī","Questa è la mia famiglia"), Phrase("لدي أخ وأخت","ladayya akhun wa-ukht","Ho un fratello e una sorella"),
+        Phrase("أين يسكن والداك؟","ayna yaskunu wālidāk?","Dove abitano i tuoi genitori?"), Phrase("أنا متزوج","anā mutazawwij","Sono sposato"))),
+    Lesson("msa_time","Ora e appuntamenti","ARABO STANDARD","msa",listOf(
+        Phrase("كم الساعة الآن؟","kam as-sāʿatu al-ān?","Che ore sono?"), Phrase("لدي موعد غداً","ladayya mawʿid ghadan","Ho un appuntamento domani"),
+        Phrase("سأصل بعد عشر دقائق","sa-aṣilu baʿda ʿashri daqāʾiq","Arriverò tra dieci minuti"), Phrase("هل أنت متاح اليوم؟","hal anta mutāḥ al-yawm?","Sei disponibile oggi?")))
 )
 
 private fun createEndlessLessons(base:List<Lesson>, count:Int):List<Lesson> {
